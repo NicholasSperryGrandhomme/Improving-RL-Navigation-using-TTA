@@ -1,182 +1,86 @@
-# 3D Control and Reasoning without a Supercomputer
-A collection of scenarios and efficient benchmarks for the ViZDoom RL environment. 
-For further details refer to the [paper](https://arxiv.org/abs/1904.01806) 
+# Improving a RL Navigation Agent using Test Time Adaptation methods
+This repository contains the code use to evaluate the Robustness of an A2C Navigation Agent and improving it using TTA methods. This project was done for the course *Visual Intelligence: Machines and Minds* as part of the coursework.
 
-This repository includes:
-* Source code for generation of custom scenarios for the ViZDoom simulator
-* Source code for training new agents with the GPU-batched A2C algorithm
-* Detailed instructions of how to evaluate pretrained agents and train new ones
-* Example videos of rollouts of the agent.
+## Team members
+* Oscar Lucas Blazquez
+* Oliver Becker
+* Nicholas Sperry
 
-
-# Contents
-* [Installation](https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks/blob/master/README.md#installation-1)
-* [Custom scenario generation](https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks#custom-scenario-generation-1)
-* [Evaluating and training agents](https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks#evaluating-pretrained-agents-and-training-new-ones-on-the-scenarios)
-* [FAQ](https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks#faq)
-* [Citation](https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks#citation-1)
+## Project Layout
+The base code of this project (so the Agent we are trying to improve) was taken from [[here]](https://github.com/edbeeching/3d_control_deep_rl)[[Paper]](https://arxiv.org/abs/1904.01806). We implemented the TTA methods from the *Self-Supervised Policy Adaptation during Deployment* repository [[GitHub]](https://github.com/nicklashansen/policy-adaptation-during-deployment)[[Paper]](https://arxiv.org/abs/2007.04309).
 
 ## Installation
-### Requirements
 
-* Ubuntu 16.04+ (there is no reason this will not work on Mac or Windows but I have not tested)
-* python 3.5+
-* PyTorch 0.4.0+ 
-* ViZDoom 1.1.4 (if evaluating a pretrained model, otherwise the latest vision should be fine)
+### Requirements
+The code only seems to be able to run on Linux, as we had many issues trying to run it on Mac and Windows. This is likely due to the older ViZDoom version used. Other than that, it seemed to work on Google Colab fine.
 
 ### Instructions
-1. [ViZDoom](https://github.com/mwydmuch/ViZDoom/blob/master/doc/Building.md#linux_deps) has many dependencies which are described on their site, make sure to install the [ZDoom](https://zdoom.org/wiki/Compile_ZDoom_on_Linux)  dependencies.
-2. Clone this repo
-3. Assuming you are using a venv, activate it and install packages listed in requirements.txt
-4. Test the installation with the following command, this should train an agent 100,000 frames in the basic health gathering scenario:
-```
-    python  3dcdrl/train_agent.py  --num_frames 100000
-```
-Note if you want to train this agent to convergence it takes between 5-10M frames.
+1. Install [ViZDoom](https://github.com/mwydmuch/ViZDoom)
+2. Clone this repository
+3. Install the `requirements.txt` file
 
-## Custom scenario generation
-As detailed in the paper, there are a number of scenarios.
-We include a script **generate_scenarios.sh** in the repo that will generate the following scenarios:
- 
-* Labyrinth: Sizes 5, 7, 9, 11, 13
-* Find return: Size 5, 7, 9, 11, 13
-* K-Item : 2, 4, 6, 8 items
-* Two color correlation: 10%, 30%, 50% and 70% walls retained.
+These should be all the requirements, but if not follow the instructions from the original repository [here](https://github.com/edbeeching/3d_control_deep_rl).
 
-This takes around 10 minutes so grab a coffee. If you wish to only generate for one scenario, take a look at the script it should be clear what you need to change.
+## Evaluating Agent Robustness
+First follow these two steps:
+1. Clone the repository
+2. `cd` into `3dcdrl/`
 
-## Evaluating pretrained agents and training new ones on the Scenarios
+There is also a Jupyter notebook (`3dcdrl/TTA Evalutation.ipynb`) with some similar explanations on how to run these tests.
 
-We include pretrained models in the repo that you can test out, or you can train your own agents from scratch.
-The evaluation code will output example rollouts for all 64 test scenarios.
+### Baseline Evaluation
+To evaluate the baseline, unchanged Agent run the following command:
+        
+       python create_rollout_videos.py --limit_actions \
+       --scenario_dir  scenarios/custom_scenarios/labyrinth/9/test/ \
+       --scenario original.cfg  --model_checkpoint \
+       tta_models/policy.pth.tar \
+       --multimaze --num_mazes_test 1 --num_environments 1 --num_actions 5 \
+       --exp_name original
+       
+Here you can change the `--scenario` flag to any of the following:
 
-### Labyrinth
+* ***original.cfg*** - Original map
+* ***mossy_walls.cfg*** - Walls have a mossy texture
+* ***decreased_light.cfg*** - Map is darker
+* ***increased_light.cfg*** - Map is brighter
+* ***swapped_ceil_floor.cfg*** - Floor and Ceiling textures swapped, and map is brighter.
 
-<p float="left">
-  <img src="https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks/blob/master/videos/labyrinth_example.gif" height="200" />
-  <img src="https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks/blob/master/results/labyrinth_res.png" height="200" /> 
-</p>
+The command above also creates a video of the Agent navigating through the map as well as a pickle file containing all the times taken over
+each run. To pick a name, use the `--exp_name` flag followed by whatever you want to name these files (e.g. `--exp_name original_baseline`. These files will be saved in the `3dcdrl/TTA_videos/baseline/` directory (for the baseline Agent).
 
-Evaluation:
-```
-SIZE=9
-python 3dcdrl/create_rollout_videos.py --limit_actions \
-       --scenario_dir  3dcdrl/scenarios/custom_scenarios/labyrinth/$SIZE/test/ \
-       --scenario custom_scenario{:003}.cfg  --model_checkpoint \
-       3dcdrl/saved_models/labyrinth_$SIZE\_checkpoint_0198658048.pth.tar \
-       --multimaze --num_mazes_test 64
-```
+You can also use the `--gamma_value` flag to set the amount of gamma correction, for exmaple `--gamma_value 1.5`. A higher gamma value results in darker images. You can also use the `--inverse` flag to create negative images that will be fed into the agent.
 
-Training:
-```
-SIZE=9
-python  3dcdrl/train_agent.py --scenario custom_scenario{:003}.cfg \
-        --limit_actions \
-        --scenario_dir 3dcdrl/scenarios/custom_scenarios/labyrinth/$SIZE/train/ \
-        --test_scenario_dir 3dcdrl/scenarios/custom_scenarios/labyrinth/$SIZE/test/ \
-        --multimaze --num_mazes_train 256 --num_mazes_test 64 --fixed_scenario
-```
+### TTA Evaluation
+We implemented TTA with rotation prediction from the *Self-Supervised Policy Adaptation during Deployment* [paper](https://github.com/nicklashansen/policy-adaptation-during-deployment), as well as a similar method that uses TTA with grayscale prediction. To test one **OR** the other, you must use the `--use_tta` flag followed by `--use_rot` or `use_gray` to use TTA with rotation prediction or TTA with grayscale prediction respectively. Here are two examples.
 
-### Find and return
-<p float="left">
-  <img src="https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks/blob/master/videos/find_return_example.gif" height="200" />
-  <img src="https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks/blob/master/results/find_return_results.png" height="200" /> 
-</p>
+**Evaluating on the original map using TTA with Rotation prediction**:
 
-Evaluation:
-```
-SIZE=9
-python 3dcdrl/create_rollout_videos.py --limit_actions \
-       --scenario_dir  3dcdrl/scenarios/custom_scenarios/find_return/$SIZE/test/ \
-       --scenario custom_scenario{:003}.cfg  --model_checkpoint \
-       3dcdrl/saved_models/find_return_$SIZE\_checkpoint_0198658048.pth.tar \
-       --multimaze --num_mazes_test 64
-```
-Training:
-```
-SIZE=9
-python  3dcdrl/train_agent.py --scenario custom_scenario{:003}.cfg \
-         --limit_actions \
-        --scenario_dir 3dcdrl/scenarios/custom_scenarios/find_return/$SIZE/train/ \
-        --test_scenario_dir 3dcdrl/scenarios/custom_scenarios/find_return/$SIZE/test/ \
-        --multimaze --num_mazes_train 256 --num_mazes_test 64 --fixed_scenario
-```
+       python create_rollout_videos.py --limit_actions \
+       --scenario_dir  scenarios/custom_scenarios/labyrinth/9/test/ \
+       --model_checkpoint tta_models/policy.pth.tar \
+       --multimaze --num_mazes_test 1 --num_environments 1 --num_actions 5 \
+       --scenario original.cfg --use_tta --use_rot --exp_name rotation_original
+       
+The command above will then create a navigation video as well as the time taken for each run in the `3dcdrl/TTA_videos/rotation/` directory called `rotation_original.mp4` and `rotation_original.pkl` respectively.
+       
+**Evaluating on the mossy wall map using TTA with Grayscale prediction**:
 
-### K-item
-<p float="left">
-  <img src="https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks/blob/master/videos/4_item_example.gif" height="200" />
-  <img src="https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks/blob/master/results/kitem_res.png" height="200" /> 
-</p>
+       python create_rollout_videos.py --limit_actions \
+       --scenario_dir  scenarios/custom_scenarios/labyrinth/9/test/ \
+       --model_checkpoint tta_models/policy.pth.tar \
+       --multimaze --num_mazes_test 1 --num_environments 1 --num_actions 5 \
+       --scenario mossy_walls.cfg --use_tta --use_gray --exp_name grayscale_mossy
 
-Evaluation:
-```
-NUM_ITEMS=4
-python 3dcdrl/create_rollout_videos.py --limit_actions \
-       --scenario_dir  3dcdrl/scenarios/custom_scenarios/kitem/$NUM_ITEM/test/ \
-       --scenario custom_scenario{:003}.cfg  --model_checkpoint \
-       3dcdrl/saved_models/$NUM_ITEMS\item_checkpoint_0198658048.pth.tar \
-       --multimaze --num_mazes_test 64
-```
-Training:
-```
-NUM_ITEMS=4
-python  3dcdrl/train_agent.py --scenario custom_scenario{:003}.cfg \
-        --limit_actions \
-        --scenario_dir 3dcdrl/scenarios/custom_scenarios/kitem/$NUM_ITEMS/train/ \
-        --test_scenario_dir 3dcdrl/scenarios/custom_scenarios/kitem/$NUM_ITEMS/test/ \
-        --multimaze --num_mazes_train 256 --num_mazes_test 64 --fixed_scenario
-```
+The command above will then create a navigation video as well as the time taken for each run in the `3dcdrl/TTA_videos/grayscale/` directory called `grayscale_mossy.mp4` and `grayscale_mossy.pkl` respectively.
 
-### Two color correlation
-<p float="left">
-  <img src="https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks/blob/master/videos/two_color_example.gif" height="200" />
-  <img src="https://github.com/edbeeching/3D_Control_RL_Scenario_Benchmarks/blob/master/results/two_color_correlation_res.png" height="200" /> 
-</p>
+### Ablation Experiment
+By evaluating the Agent and just setting the `--use_tta` flag, the Agent trained using the grayscale TTA will be loaded, but TTA will be switched off during evaluation. This a sort of Ablation test since we are removing the TTA at test time, but using the Agent that was trained by it. For example:
 
-Evaluation:
-```
-DIFFICULTY=3
-python 3dcdrl/create_rollout_videos.py --limit_actions \
-       --scenario_dir  3dcdrl/scenarios/custom_scenarios/two_color/$DIFFICULTY/$DIFFICULTY/test/ \
-       --scenario custom_scenario{:003}.cfg  --model_checkpoint \
-       3dcdrl/saved_models/two_col_p$DIFFICULTY\_checkpoint_0198658048.pth.tar \
-       --multimaze --num_mazes_test 64
-```
-Training:
-
-```
-DIFFICULTY=3
-python  3dcdrl/train_agent.py --scenario custom_scenario{:003}.cfg \
-        --limit_actions \
-        --scenario_dir 3dcdrl/scenarios/custom_scenarios/two_color/$DIFFICULTY/train/ \
-        --test_scenario_dir 3dcdrl/scenarios/custom_scenarios/two_color/$DIFFICULTY/test/ \
-        --multimaze --num_mazes_train 256 --num_mazes_test 64 --fixed_scenario
-```
-
-
-## FAQ
-### Why is my FPS 4x lower than in your paper?
-In the paper we report a frames per second in terms of envionrment interactions, the agents are trained with a frame skip of 4, which means for each observation the same action is repeated 4 times.
-
-### I have limited memory, is there anything I can do?
-Yes, we have made a tradeoff between increased memory usage in order to increase performance, you can reduce the memory footprint by excluding **--fixed scenario** from the command line arguments. You will see a 10% drop in efficiency.
-
-### 
-
-
-## Citation
-If you find this useful, consider citing the following:
-```
-@inproceedings{beeching2020baselines,
-  title={Deep Reinforcement Learning on a Budget: 3D Control and Reasoning Without a
-    Supercomputer.
-  },
-  author={Beeching, Edward and Dibangoye, Jilles and 
-          Simonin, Olivier and Wolf, Christian}
-  booktitle={International Conference on Pattern Recognition},
-  year={2020}}
-```
-
-
-
-
+        python create_rollout_videos.py --limit_actions \
+       --scenario_dir  scenarios/custom_scenarios/labyrinth/9/test/ \
+       --model_checkpoint tta_models/policy.pth.tar \
+       --multimaze --num_mazes_test 1 --num_environments 1 --num_actions 5 \
+       --scenario mossy_walls.cfg --use_tta --exp_name ablation_mossy
+       
+Will create the video and pickle file in the `3dcdrl/TTA_videos/tta_OFF/` directory
