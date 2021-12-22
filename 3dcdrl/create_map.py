@@ -11,11 +11,11 @@ def arguments_given():
     parser = argparse.ArgumentParser()
     p = parser.add_argument
     
-    p('--path_txt_pos_track', default="./map_creation/TTA_position/baseline/baseline_original.txt", help='Folder of txt file with positions',  type=str)
+    p('--path_txt_pos_track', default="./map_creation/TTA_position/baseline/original.txt", help='Folder of txt file with positions',  type=str)
     p('--image_path',         default="./scenarios/custom_scenarios/labyrinth/9/test/map.png",      help='The map to draw on',  type=str)
     p('--map_path',           default="./map_creation/map/",                                        help='Path where maps get saved',  type=str)
     p('--arrow_path',         default="./map_creation/arrows/",                                     help='Path where arrows get saved',  type=str)
-    p('--view_path',          default="./map_creation/TTA_view/baseline/view/",                     help='Path where the view was saved',  type=str)
+    p('--view_path',          default="./map_creation/TTA_view/baseline/",                     help='Path where the view was saved',  type=str)
     p('--mosaic_path',        default="./map_creation/mosaic/",                                     help='Path where mosaics get saved',  type=str)
     p('--frame_no',           default=30,                                                           help='Numbers of frames which should be used',  type=int)
     p('--jump_steps',         default=4,                                                            help='Jump frames',  type=int)
@@ -50,7 +50,7 @@ def read_txt_pos_track(txt_path):
             y_list.append(y)
     return x_list, y_list
 
-def create_track_on_map(txt_path, image_path, steps=False):
+def create_track_on_map(txt_path, image_path, map_path, steps=False):
     """ Draw position of agent onto the given map. """
     x_list, y_list = read_txt_pos_track(txt_path)
     # to read the image stored in the working directory
@@ -64,7 +64,7 @@ def create_track_on_map(txt_path, image_path, steps=False):
         for x, y in zip(x_list[1::jump_steps], y_list[1::jump_steps]):
             plt.scatter(x, y, s=size_scatter, c=colormap[c])
             plt.axis('off')
-            name = "./map/" + "map" + str(c) + ".png"
+            name = map_path + "map" + str(c) + ".png"
             plt.savefig(name)
             print("counter", c)
             c += 1
@@ -72,14 +72,14 @@ def create_track_on_map(txt_path, image_path, steps=False):
         # save only the finished map
         plt.scatter(x_list[::jump_steps], y_list[::jump_steps], s=size_scatter, c=colormap)
         plt.axis('off')
-        name = "./map/" + "map_all" + ".png"
+        name = map_path + "map_all" + ".png"
         plt.savefig(name)
 
     #plt.imshow(data)
     #plt.axis('off')
     #plt.show()
     
-def create_track_arrow(txt_path):
+def create_track_arrow(txt_path, arrow_path):
     """ Create arrow diagramms to show the direction heading. """
     x_list, y_list = read_txt_pos_track(txt_path)
     
@@ -97,7 +97,7 @@ def create_track_arrow(txt_path):
         y_dif = y - old_y
         old_x, old_y = x, y
         plt.annotate("", xy=(x_dif,y_dif), xytext=(0,0), arrowprops=prop)
-        name = "./arrows/" + "arrow" + str(c) + ".png"
+        name = arrow_path + "arrow" + str(c) + ".png"
         print("x_dif:", x_dif, "y_dif", y_dif, "counter", c)
         c += 1
         plt.savefig(name)
@@ -132,7 +132,7 @@ def create_mosaic(map_path, arrow_path, view_path, length=0):
 if __name__ == "__main__":
     args = arguments_given()
     
-    path_txt_pos_track = args.use_tta
+    path_txt_pos_track = args.path_txt_pos_track
     image_path = args.image_path
     map_path = args.map_path
     arrow_path = args.arrow_path
@@ -144,8 +144,8 @@ if __name__ == "__main__":
     map_y_plus = args.map_y_plus
     
     
-    create_track_on_map(path_txt_pos_track, image_path, True)
-    create_track_arrow(path_txt_pos_track)
+    create_track_on_map(path_txt_pos_track, image_path, map_path, True)
+    create_track_arrow(path_txt_pos_track, arrow_path)
         
     create_mosaic(map_path, arrow_path, view_path, frame_no)
 
