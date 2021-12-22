@@ -22,6 +22,7 @@ def parse_a2c_args():
     paa('--experiment_name', default='original', help='Name of mp4 move created, and pickle file with times taken.', type=str)
     paa('--gamma_val', default=1, help='Amount of gamma correction to apply to the input observation.', type=float)
     paa('--inverse', default=False, help='Turn input to inverse image', action='store_true')
+    paa('--save_view_position', default=False, help='Save the position and view of the agent', action='store_true')
 
     # =========================================================================
     #               Environment Parameters

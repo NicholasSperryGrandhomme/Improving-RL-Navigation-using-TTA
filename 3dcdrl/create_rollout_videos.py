@@ -164,10 +164,13 @@ def evaluate_saved_model():
         else:
             tta_type = 'baseline'
         print(tta_type)
-        if save_vw_pos:
+        if SV_VW_POS:
             view_name = f'map_creation/TTA_view/{tta_type}/'
             txt_pos_track_name = f'map_creation/TTA_position/{tta_type}/{exp_name}.txt'
             print('Saving view and positions of the agent.')
+        else:
+            view_name = None
+            txt_pos_track_name = None
         movie_name = f'TTA_videos/{tta_type}/{exp_name}.mp4'
         print('Creating movie {}'.format(movie_name))
         make_movie(policy, env, movie_name, args, n_runs=100, 
