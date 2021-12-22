@@ -19,6 +19,7 @@ import cv2
 import pickle
  
 from moviepy.editor import ImageSequenceClip
+from PIL import Image
 
 
 def batch_from_obs(obs, batch_size=32):
@@ -33,7 +34,7 @@ def batch_from_obs(obs, batch_size=32):
 	return np.repeat(obs, repeats=batch_size, axis=0)
 
 def make_movie(policy, env, filename, args, n_runs=50, use_tta=False,
-               use_rot=False, use_gray=False, name=''):
+               use_rot=False, use_gray=False, name='', view=None, txt_pos=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     time_taken = []
@@ -56,7 +57,8 @@ def make_movie(policy, env, filename, args, n_runs=50, use_tta=False,
                 tta_agent.copy_conv_weights(policy.conv_head)
         state = torch.zeros(1, args.hidden_size)
         mask = torch.ones(1,1)
-        obss = []  
+        obss = []
+        pos_list = []
             
         obs = env.reset().astype(np.float32)
         done = False
@@ -75,7 +77,11 @@ def make_movie(policy, env, filename, args, n_runs=50, use_tta=False,
             state = result['states']
 
             obs, reward, done, _ = env.step(action.item())
-
+            
+            if view != None and txt_pos != None:
+                x, y, _ = env.get_player_position()
+                pos_list.append([x, y])
+            
             if use_tta and (use_rot or use_gray):
                 batch_next_obs = batch_from_obs(torch.Tensor(obs).to(device), batch_size=16)
                 # Adapt using rotation prediction
@@ -101,7 +107,20 @@ def make_movie(policy, env, filename, args, n_runs=50, use_tta=False,
     
     observations = [o.transpose(1,2,0) for o in obss]
     clip = ImageSequenceClip(observations, fps=int(30/args.frame_skip))
-    clip.write_videofile(filename)  
+    clip.write_videofile(filename)
+    
+    if view != None and txt_pos != None:
+        # saving the view of the agent and the position
+        # of the last run
+        pos_txt = open(txt_pos, "w+")
+        for p in pos_list:
+            pos_txt.write("%d,%d\r\n" % (p[0], p[1]))
+        pos_txt.close()
+        
+        for c, o in enumerate(observations):
+            im = Image.fromarray(o)
+            fig_name = view_name + str(c) + ".png"
+            im.save(view_path + fig_name)
 
 def evaluate_saved_model():
     args = parse_a2c_args()
@@ -109,6 +128,7 @@ def evaluate_saved_model():
     USE_ROT = args.use_rot
     USE_GRAY = args.use_gray
     exp_name = args.experiment_name
+    SV_VW_POS = args.save_view_position
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     obs_shape = (3, args.screen_height, args.screen_width)
@@ -144,10 +164,14 @@ def evaluate_saved_model():
         else:
             tta_type = 'baseline'
         print(tta_type)
+        if save_vw_pos:
+            view_name = f'map_creation/TTA_view/{tta_type}/'
+            txt_pos_track_name = f'map_creation/TTA_position/{tta_type}/{exp_name}.txt'
+            print('Saving view and positions of the agent.')
         movie_name = f'TTA_videos/{tta_type}/{exp_name}.mp4'
         print('Creating movie {}'.format(movie_name))
         make_movie(policy, env, movie_name, args, n_runs=100, 
-                   use_tta=USE_TTA, use_rot=USE_ROT, use_gray=USE_GRAY, name=exp_name)
+                   use_tta=USE_TTA, use_rot=USE_ROT, use_gray=USE_GRAY, name=exp_name, view=view_name, txt_pos=txt_pos_track_name)
         
         
 if __name__ == '__main__':
