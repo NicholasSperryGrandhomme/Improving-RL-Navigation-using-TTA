@@ -118,9 +118,9 @@ def make_movie(policy, env, filename, args, n_runs=50, use_tta=False,
         pos_txt.close()
         
         for c, o in enumerate(observations):
-            im = Image.fromarray(o)
-            fig_name = view_name + str(c) + ".png"
-            im.save(view_path + fig_name)
+            im = Image.fromarray(o.astype(np.uint8))
+            fig_name = str(c) + ".png"
+            im.save(view + fig_name)
 
 def evaluate_saved_model():
     args = parse_a2c_args()
