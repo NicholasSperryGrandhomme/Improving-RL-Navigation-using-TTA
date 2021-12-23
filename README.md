@@ -88,7 +88,9 @@ Will create the video and pickle file in the `3dcdrl/TTA_videos/tta_OFF/` direct
 ### Map Creation
 To create a map and / or a mosaic of map, view of the agent and direction, to visualize how the navigation agent behaved, we need to first run ‘create_rollout_video.py’ with the argument ‘save_view_position’. This will save the view of the agent in ‘map_creation/TTA_view/’ and the position txt in in ‘map_creation/TTA_position/’. Next we run ‘create_map.py’, for this we need to set the ‘path_txt_pos_track’ argument to the position txt, the ‘view_path’ argument to the view path and the ‘image_path’ to the map we will draw on. Theses maps can be retrieved from SLADE. As the ViZDOOM coordinates
 Coordinates are not zero at the top left, but somewhere in the middle of the map you need to provide how much the map extends into the negative x-axis and positive y-axis, through `map_x_minus` and `map_y_plus` respectively. The default values are for the 0. labyrinth of size 9 in the test set. 
+
 ‘create_map.py’ will create maps with the position given from the txt and arrow diagramms the agent is heading, together with those and the view it will create a mosaic, joining view, map and arrowing in one image. Maps are saved in ‘map_creation/map/’, arrows in ‘map_creation/arrows/’ and mosaics in ‘map_creation/mosaic/’. For the baseline some example images are given. 
+
 The argument `frame_no` is the number of mosaic images to be created. For the map and the arrow it will always create the images for every frame. `jump_steps` will only take every x-th position and view into account. Choosing `frame_no * jump_steps > view images` will create the first mosaics  but then will fail. 
 
 Example command:
