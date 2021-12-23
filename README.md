@@ -36,7 +36,7 @@ To evaluate the baseline, unchanged Agent run the following command:
        --scenario original.cfg  --model_checkpoint \
        tta_models/policy.pth.tar \
        --multimaze --num_mazes_test 1 --num_environments 1 --num_actions 5 \
-       --exp_name original
+       --experiment_name original
        
 Here you can change the `--scenario` flag to any of the following:
 
@@ -60,7 +60,7 @@ We implemented TTA with rotation prediction from the *Self-Supervised Policy Ada
        --scenario_dir  scenarios/custom_scenarios/labyrinth/9/test/ \
        --model_checkpoint tta_models/policy.pth.tar \
        --multimaze --num_mazes_test 1 --num_environments 1 --num_actions 5 \
-       --scenario original.cfg --use_tta --use_rot --exp_name rotation_original
+       --scenario original.cfg --use_tta --use_rot --experiment_name rotation_original
        
 The command above will then create a navigation video as well as the time taken for each run in the `3dcdrl/TTA_videos/rotation/` directory called `rotation_original.mp4` and `rotation_original.pkl` respectively.
        
@@ -70,7 +70,7 @@ The command above will then create a navigation video as well as the time taken 
        --scenario_dir  scenarios/custom_scenarios/labyrinth/9/test/ \
        --model_checkpoint tta_models/policy.pth.tar \
        --multimaze --num_mazes_test 1 --num_environments 1 --num_actions 5 \
-       --scenario mossy_walls.cfg --use_tta --use_gray --exp_name grayscale_mossy
+       --scenario mossy_walls.cfg --use_tta --use_gray --experiment_name grayscale_mossy
 
 The command above will then create a navigation video as well as the time taken for each run in the `3dcdrl/TTA_videos/grayscale/` directory called `grayscale_mossy.mp4` and `grayscale_mossy.pkl` respectively.
 
@@ -81,7 +81,7 @@ By evaluating the Agent and just setting the `--use_tta` flag, the Agent trained
        --scenario_dir  scenarios/custom_scenarios/labyrinth/9/test/ \
        --model_checkpoint tta_models/policy.pth.tar \
        --multimaze --num_mazes_test 1 --num_environments 1 --num_actions 5 \
-       --scenario mossy_walls.cfg --use_tta --exp_name ablation_mossy
+       --scenario mossy_walls.cfg --use_tta --experiment_name ablation_mossy
        
 Will create the video and pickle file in the `3dcdrl/TTA_videos/tta_OFF/` directory
 
